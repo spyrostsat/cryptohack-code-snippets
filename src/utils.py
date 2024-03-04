@@ -1,5 +1,6 @@
 from typing import Tuple, List
 from src.const import *
+from math import floor
 
 
 def string_to_binary(input_string: str) -> str:
@@ -204,3 +205,37 @@ def decrypt(key: bytes, ciphertext: bytes, N_ROUNDS: int) -> bytes:
 
     # Convert state matrix to plaintext
     return matrix2bytes(state)
+
+
+def ecc_points_addition(P, Q, a, p):
+    # Point addition on an elliptic curve
+    
+    def inverse_modulo(x, p):
+        return pow(x, p-2, p) 
+
+    if P == O: return Q
+    if Q == O: return P
+    if P[0] == Q[0] and P[1] == -Q[1]: return O
+
+    if P != Q: lam = (Q[1] - P[1]) * inverse_modulo(Q[0]-P[0], p)
+    else: lam = (3 * P[0] ** 2 + a) * inverse_modulo(2 * P[1], p)
+
+    x3 = lam ** 2 - P[0] - Q[0]
+    x3 %= p
+    y3 = lam * (P[0] - x3) - P[1]
+    y3 %= p
+    return (int(x3), int(y3))
+
+
+def ecc_scalar_multiplication(P, n, a, p):
+    # Double and add algorithm
+    R = O
+    Q = P
+    
+    while n > 0:
+        if n % 2 == 1:
+            R = ecc_points_addition(R, Q, a, p)
+        Q = ecc_points_addition(Q, Q, a, p)
+        n = floor(n/2)
+    
+    return R
